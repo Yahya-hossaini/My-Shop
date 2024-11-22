@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:my_shop/providers/product.dart';
 
 class ProductsProvider with ChangeNotifier {
@@ -64,18 +66,36 @@ class ProductsProvider with ChangeNotifier {
   //   notifyListeners();
   // }
 
-  void addProduct(Product product) {
-    final newProduct = Product(
-      id: DateTime.now().toString(),
-      title: product.title,
-      description: product.description,
-      price: product.price,
-      imageUrl: product.imageUrl,
-    );
-    _items.add(newProduct);
-    // _items.insert(0, newProduct);// at the start of list
-    notifyListeners();
+  void addProduct(Product product) async {
+    const url = 'https://meal-shop-138fc-default-rtdb.firebaseio.com/products.json';
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        body: json.encode({
+          'title': product.title,
+          'description': product.description,
+          'imageUrl': product.imageUrl,
+          'price': product.price,
+          'isFavorite': product.isFavorite,
+        }),
+      );
+
+      final newProduct = Product(
+        id: json.decode(response.body)['name'],
+        title: product.title,
+        description: product.description,
+        price: product.price,
+        imageUrl: product.imageUrl,
+      );
+      _items.add(newProduct);
+      notifyListeners();
+    } catch (error) {
+      // Handle error appropriately
+      print(error);
+      throw error;
+    }
   }
+
 
   void updateProduct(String id, Product newProduct){
     final productIndex = _items.indexWhere((product) => product.id == id);
